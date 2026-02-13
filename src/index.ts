@@ -10,16 +10,18 @@ import { createServer } from "http";
 // MCP Webhook Server
 // Servidor MCP que expone una herramienta para enviar datos a webhooks via POST
 //
-// Variables de entorno:
-//   WEBHOOK_URL  — URL del webhook destino (requerido si no se pasa como parámetro)
+// Resolución de URL del webhook (prioridad):
+//   1. Parámetro 'url' pasado al invocar la herramienta
+//   2. Query param '?webhook_url=...' en la URL de conexión MCP
+//   3. Variable de entorno WEBHOOK_URL
 //
 // Modos de ejecución:
-//   - STDIO (default): node dist/index.js
+//   - STDIO (local):   node dist/index.js
 //   - HTTP  (remoto):  node dist/index.js --http [--port 3100]
 // ============================================================================
 
 // --- Definir la herramienta en el servidor MCP ---
-function createWebhookServer(): McpServer {
+function createWebhookServer(defaultWebhookUrl?: string): McpServer {
     const server = new McpServer({
         name: "webhook-sender",
         version: "1.0.0",
@@ -44,15 +46,15 @@ function createWebhookServer(): McpServer {
                 .describe("Headers HTTP adicionales para la petición (opcional)"),
         },
         async ({ url, titulo, texto, autor, fuente, campos_extra, headers }) => {
-            // Resolver URL: parámetro > variable de entorno
-            const webhookUrl = url ?? process.env.WEBHOOK_URL;
+            // Resolver URL: parámetro > query param de conexión > variable de entorno
+            const webhookUrl = url ?? defaultWebhookUrl ?? process.env.WEBHOOK_URL;
 
             if (!webhookUrl) {
                 return {
                     content: [
                         {
                             type: "text" as const,
-                            text: "❌ No se proporcionó URL del webhook. Pásala como parámetro 'url' o configura la variable de entorno WEBHOOK_URL.",
+                            text: "❌ No se proporcionó URL del webhook. Opciones: (1) parámetro 'url', (2) query param '?webhook_url=...' en la URL de conexión, (3) variable de entorno WEBHOOK_URL.",
                         },
                     ],
                     isError: true,
@@ -116,7 +118,7 @@ function createWebhookServer(): McpServer {
                                 text: [
                                     `✅ Webhook enviado exitosamente`,
                                     ``,
-                                    `📡 URL: ${url}`,
+                                    `📡 URL: ${webhookUrl}`,
                                     `📊 Status: ${statusCode}`,
                                     `📅 Fecha: ${fecha}`,
                                     `🕐 Hora: ${hora}`,
@@ -141,7 +143,7 @@ function createWebhookServer(): McpServer {
                                 text: [
                                     `❌ Error al enviar webhook`,
                                     ``,
-                                    `📡 URL: ${url}`,
+                                    `📡 URL: ${webhookUrl}`,
                                     `📊 Status: ${statusCode}`,
                                     ``,
                                     `📥 Respuesta del servidor:`,
@@ -161,7 +163,7 @@ function createWebhookServer(): McpServer {
                             text: [
                                 `❌ Error de conexión al webhook`,
                                 ``,
-                                `📡 URL: ${url}`,
+                                `📡 URL: ${webhookUrl}`,
                                 `🔥 Error: ${errorMessage}`,
                             ].join("\n"),
                         },
@@ -236,12 +238,14 @@ async function startHttp(port: number) {
 
                 // Si es un request de inicialización (sin session ID previo)
                 if (!sessionId && body.method === "initialize") {
-                    const server = createWebhookServer();
+                    // Leer webhook_url del query parameter de la URL de conexión
+                    const clientWebhookUrl = url.searchParams.get("webhook_url") ?? undefined;
+                    const server = createWebhookServer(clientWebhookUrl);
                     const transport = new StreamableHTTPServerTransport({
                         sessionIdGenerator: () => crypto.randomUUID(),
                         onsessioninitialized: (newSessionId) => {
                             sessions.set(newSessionId, { server, transport });
-                            console.error(`📱 Nueva sesión: ${newSessionId}`);
+                            console.error(`📱 Nueva sesión: ${newSessionId}${clientWebhookUrl ? ` (webhook: ${clientWebhookUrl})` : ''}`);
                         },
                     });
 
@@ -309,7 +313,7 @@ async function startHttp(port: number) {
         console.error(`   📡 Endpoint MCP: http://localhost:${port}/mcp`);
         console.error(`   💚 Health check: http://localhost:${port}/health`);
         console.error(`   🔗 Para conectar desde Claude Code remoto:`);
-        console.error(`      URL: https://tu-dominio.com/mcp`);
+        console.error(`      URL: https://tu-dominio.com/mcp?webhook_url=https://tu-webhook.com`);
     });
 }
 
