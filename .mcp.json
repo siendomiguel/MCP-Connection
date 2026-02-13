@@ -1,0 +1,10 @@
+{
+    "mcpServers": {
+        "webhook-sender": {
+            "command": "node",
+            "args": [
+                "e:/dev/proyectos/bitfinApp/MCP/dist/index.js"
+            ]
+        }
+    }
+}
