@@ -10,6 +10,9 @@ import { createServer } from "http";
 // MCP Webhook Server
 // Servidor MCP que expone una herramienta para enviar datos a webhooks via POST
 //
+// Variables de entorno:
+//   WEBHOOK_URL  — URL del webhook destino (requerido si no se pasa como parámetro)
+//
 // Modos de ejecución:
 //   - STDIO (default): node dist/index.js
 //   - HTTP  (remoto):  node dist/index.js --http [--port 3100]
@@ -26,7 +29,7 @@ function createWebhookServer(): McpServer {
         "send_webhook",
         "Envía datos a un webhook via HTTP POST. Incluye campos predeterminados como título, texto, fecha, hora, autor y fuente. También acepta campos personalizados adicionales. Usa esta herramienta al finalizar una tarea para notificar resultados.",
         {
-            url: z.string().url().describe("URL del webhook destino (ej: https://hook.us2.make.com/...)"),
+            url: z.string().url().optional().describe("URL del webhook destino. Si no se proporciona, usa la variable de entorno WEBHOOK_URL."),
             titulo: z.string().describe("Título o nombre de la tarea/evento"),
             texto: z.string().describe("Descripción o resumen del contenido/tarea realizada"),
             autor: z.string().optional().default("Claude Code").describe("Autor o responsable de la acción (default: Claude Code)"),
@@ -41,6 +44,21 @@ function createWebhookServer(): McpServer {
                 .describe("Headers HTTP adicionales para la petición (opcional)"),
         },
         async ({ url, titulo, texto, autor, fuente, campos_extra, headers }) => {
+            // Resolver URL: parámetro > variable de entorno
+            const webhookUrl = url ?? process.env.WEBHOOK_URL;
+
+            if (!webhookUrl) {
+                return {
+                    content: [
+                        {
+                            type: "text" as const,
+                            text: "❌ No se proporcionó URL del webhook. Pásala como parámetro 'url' o configura la variable de entorno WEBHOOK_URL.",
+                        },
+                    ],
+                    isError: true,
+                };
+            }
+
             const ahora = new Date();
             const fecha = ahora.toLocaleDateString("es-ES", {
                 year: "numeric",
@@ -55,6 +73,7 @@ function createWebhookServer(): McpServer {
             });
 
             const body: Record<string, unknown> = {
+                webhook_url: webhookUrl,
                 titulo,
                 texto,
                 fecha,
@@ -75,7 +94,7 @@ function createWebhookServer(): McpServer {
             };
 
             try {
-                const response = await fetch(url, {
+                const response = await fetch(webhookUrl, {
                     method: "POST",
                     headers: requestHeaders,
                     body: JSON.stringify(body),

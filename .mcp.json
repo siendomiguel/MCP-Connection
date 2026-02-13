@@ -4,7 +4,10 @@
             "command": "node",
             "args": [
                 "e:/dev/proyectos/bitfinApp/MCP/dist/index.js"
-            ]
+            ],
+            "env": {
+                "WEBHOOK_URL": "https://tu-webhook-url.com/endpoint"
+            }
         }
     }
 }
