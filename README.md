@@ -12,26 +12,57 @@ pip install -r requirements.txt
 
 ---
 
-## 🖥️ Modo Local (STDIO) — Un solo usuario
+## 🖥️ Modo Local (Claude Desktop o uso personal)
 
-Para uso personal en tu máquina. Claude Code lo ejecuta directamente.
+Esta sección está pensada para la comunidad **Open Source** que desee utilizar este servidor de forma local en su propia máquina.
 
-### Configurar en Claude Code
-Agrega esto a `.mcp.json` en la raíz de tu proyecto:
+### 1. Clonar el repositorio y configurar dependencias
+
+Para usar la herramienta directamente en tu computadora a través de **Claude Desktop** (la aplicación gráfica) o en una instancia local de Claude Code, primero debes descargar el código fuente y preparar el entorno de Python.
+
+Abre tu terminal y ejecuta:
+
+```bash
+# Clonar el proyecto
+git clone https://github.com/siendomiguel/MCP-Connection.git
+cd MCP-Connection/MCP
+
+# (Opcional pero recomendado) Crear un entorno virtual
+python -m venv venv
+# En Windows: venv\Scripts\activate
+# En Mac/Linux: source venv/bin/activate
+
+# Instalar dependencias
+pip install -r requirements.txt
+```
+
+### 2. Configurar en Claude Desktop
+
+Para que el servidor sepa a dónde enviar los datos por defecto, debes configurar la variable de entorno `WEBHOOK_URL` directamente en la configuración de la aplicación.
+
+Abre el archivo de configuración de Claude Desktop:
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **Mac**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Agrega el siguiente bloque de configuración. Notarás que bajo `env` tú decides hacia qué webhook se mandarán los datos:
 
 ```json
 {
   "mcpServers": {
     "webhook-sender": {
       "command": "python",
-      "args": ["e:/dev/proyectos/bitfinApp/MCP/main.py"]
+      "args": ["/ruta/absoluta/a/tu/proyecto/MCP/main.py"],
+      "env": {
+        "WEBHOOK_URL": "https://hook.us1.make.com/tu-webhook-secreto"
+      }
     }
   }
 }
 ```
 
-Reinicia Claude Code y la herramienta `send_webhook` estará disponible.
+> **Importante:** Recuerda cambiar `/ruta/absoluta/a/tu/proyecto/MCP/main.py` por la ruta real donde clonaste este repositorio y asignar el `WEBHOOK_URL` válido de N8N, Make.com, Zapier, etc.
 
+Reinicia Claude Desktop y la herramienta `send_webhook` estará disponible.
 ---
 
 ## 🌐 Modo HTTP (Remoto) — Acceso por equipo
@@ -49,7 +80,9 @@ MCP_TRANSPORT=sse python main.py
 Este proyecto ya incluye `railway.json` y `Dockerfile`.
 Solo tienes que conectar tu repositorio a Railway y se detectará automáticamente. Railway asignará el `PORT` y el `Dockerfile` ejecutará el servidor en modo SSE.
 
-### 3. Configurar en Claude Code del equipo
+### 3. Configurar en el equipo
+
+**Para Claude Code:**
 Cada miembro del equipo agrega esto a su `.mcp.json` para conectarse a la nube:
 
 ```json
@@ -62,6 +95,9 @@ Cada miembro del equipo agrega esto a su `.mcp.json` para conectarse a la nube:
   }
 }
 ```
+
+> **⚠️ Importante para Claude Desktop:**  
+> A diferencia de Claude Code, la aplicación gráfica **Claude Desktop NO soporta** conexiones remotas a URLs por el momento (causa que la app muestre el error "Claude Desktop failed to Launch"). Si necesitas usar tu herramienta `webhook-sender` dentro de Claude Desktop, tendrás que configurarla como un comando local usando `python` como especificamos en la sección "Modo Local".
 
 ---
 
