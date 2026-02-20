@@ -1,18 +1,43 @@
-# Dependencies
-node_modules/
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
 
-# Build output
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Environment variables
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment configurations
 .env
 .env.local
-.env.*.local
-
-# OS files
-Thumbs.db
-Desktop.ini
-.DS_Store
 
 # IDE / Editor
 .vscode/
@@ -20,9 +45,26 @@ Desktop.ini
 *.swp
 *.swo
 
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
 # Logs
 *.log
-npm-debug.log*
 
-# Lock files (optional — uncomment if you want to track it)
-# package-lock.json
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+/node_modules
